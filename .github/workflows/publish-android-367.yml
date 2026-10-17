@@ -1,0 +1,54 @@
+name: Publish HamiDebt Android v3.6.7 download
+on:
+  push:
+    branches: [publish/android-v3.6.7]
+    paths:
+      - 'transfer/v3.6.7_b64/**'
+      - '.github/workflows/publish-android-367.yml'
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstitute verified signed Android ZIP and APK
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,zipfile
+          from pathlib import Path
+          parts=sorted(Path('transfer/v3.6.7_b64').glob('part*.txt'))
+          assert len(parts)==4, 'Missing APK ZIP base64 part'
+          data=base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True)
+          zipped='HamiDebt-v3.6.7-inplace-safe.zip'
+          apk='HamiDebt-v3.6.7-inplace-safe.apk'
+          expect_zip='db9fe95c4dd8939942dc1a7386eee964e76d86ed1da2227a354ccaa94f722fff'
+          expect_apk='1c5fc5c068783f3724256f827fe514768dd3a4a832f60955d612a60cfcc6f95f'
+          assert hashlib.sha256(data).hexdigest()==expect_zip, 'ZIP SHA256 mismatch: publication blocked'
+          Path('output').mkdir(exist_ok=True)
+          Path('output',zipped).write_bytes(data)
+          with zipfile.ZipFile(Path('output',zipped)) as z:
+              assert z.testzip() is None, 'ZIP file is corrupted'
+              apk_bytes=z.read(apk)
+          assert hashlib.sha256(apk_bytes).hexdigest()==expect_apk, 'APK SHA256 mismatch: publication blocked'
+          Path('output',apk).write_bytes(apk_bytes)
+          Path('output','README.md').write_text('# HamiDebt Android v3.6.7\n\nIn-place Android update: the existing editable profit percentage is prefilled from this customer's latest purchase. No new input field, no schema migration; includes all v3.6.6 fixes. **Do not uninstall the existing app or clear its data. Back up before upgrading.**\n',encoding='utf-8')
+          Path('output','SHA256.txt').write_text(expect_apk+'  '+apk+'\n'+expect_zip+'  '+zipped+'\n')
+          print('PASS: verified exact signed Android 3.6.7 APK and ZIP against private release hashes')
+          PY
+      - name: Publish APK and ZIP to public download repository
+        run: |
+          git fetch origin main
+          git worktree add /tmp/hamidebt-public origin/main
+          mkdir -p /tmp/hamidebt-public/android/v3.6.7 /tmp/hamidebt-public/downloads
+          cp output/* /tmp/hamidebt-public/android/v3.6.7/
+          cp output/HamiDebt-v3.6.7-inplace-safe.apk /tmp/hamidebt-public/downloads/HamiDebt-v3.6.7.apk
+          cp output/HamiDebt-v3.6.7-inplace-safe.zip /tmp/hamidebt-public/downloads/HamiDebt-v3.6.7.zip
+          cd /tmp/hamidebt-public
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android/v3.6.7 downloads/HamiDebt-v3.6.7.apk downloads/HamiDebt-v3.6.7.zip
+          git commit -m 'Publish verified signed Android 3.6.7 APK and ZIP for direct downloads'
+          git push origin HEAD:main
