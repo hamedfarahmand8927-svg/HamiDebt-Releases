@@ -1,0 +1,2 @@
+1c5fc5c068783f3724256f827fe514768dd3a4a832f60955d612a60cfcc6f95f  HamiDebt-v3.6.7-inplace-safe.apk
+db9fe95c4dd8939942dc1a7386eee964e76d86ed1da2227a354ccaa94f722fff  HamiDebt-v3.6.7-inplace-safe.zip
