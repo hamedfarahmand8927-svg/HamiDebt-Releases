@@ -34,7 +34,7 @@ jobs:
               apk_bytes=z.read(apk)
           assert hashlib.sha256(apk_bytes).hexdigest()==expect_apk, 'APK SHA256 mismatch: publication blocked'
           Path('output',apk).write_bytes(apk_bytes)
-          Path('output','README.md').write_text('# HamiDebt Android v3.6.7\n\nIn-place Android update: the existing editable profit percentage is prefilled from this customer's latest purchase. No new input field, no schema migration; includes all v3.6.6 fixes. **Do not uninstall the existing app or clear its data. Back up before upgrading.**\n',encoding='utf-8')
+          Path('output','README.md').write_text('# HamiDebt Android v3.6.7\n\nIn-place Android update: the existing editable profit percentage is prefilled from the selected customer most recent purchase. No new input field, no schema migration; includes all v3.6.6 fixes. **Do not uninstall the existing app or clear its data. Back up before upgrading.**\n',encoding='utf-8')
           Path('output','SHA256.txt').write_text(expect_apk+'  '+apk+'\n'+expect_zip+'  '+zipped+'\n')
           print('PASS: verified exact signed Android 3.6.7 APK and ZIP against private release hashes')
           PY
